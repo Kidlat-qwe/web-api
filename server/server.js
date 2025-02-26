@@ -11,7 +11,7 @@ app.use(cors({ origin: '*' })); // Allow all origins
 app.use(express.json());
 
 const pool = new Pool({
-  connectionString: process.env.database = school_management_db_ke56, 
+  connectionString: process.env.database, 
   ssl: {
     rejectUnauthorized: false // Required for Render PostgreSQL
   }
