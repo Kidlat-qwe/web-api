@@ -4,19 +4,19 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
-const port = 8000;
+const port = process.env.PORT || 8000;
 
 // Enable CORS for all origins during development
-app.use(cors());
+app.use(cors({ origin: '*' })); // Allow all origins
 app.use(express.json());
 
 const pool = new Pool({
-  user: 'school_management_db_ke56_user',
-  password: 'rmdKDpgwnDlztwqPla4tCKZ5BTsvFUio',
-  host: 'dpg-cuslodvnoe9s7390fci0-a',
-  database: 'school_management_db_ke56',
-  port: 5432
+  connectionString: process.env.database = school_management_db_ke56, 
+  ssl: {
+    rejectUnauthorized: false // Required for Render PostgreSQL
+  }
 });
+
 
 // Log all requests
 app.use((req, res, next) => {
