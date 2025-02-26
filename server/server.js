@@ -11,10 +11,10 @@ app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
-  user: 'postgres',
-  password: '2025',
-  host: 'localhost',
-  database: 'school_management',
+  user: 'school_management_db_ke56_user',
+  password: 'rmdKDpgwnDlztwqPla4tCKZ5BTsvFUio',
+  host: 'dpg-cuslodvnoe9s7390fci0-a',
+  database: 'school_management_db_ke56',
   port: 5432
 });
 
@@ -41,7 +41,7 @@ app.get('/students', async (req, res) => {
         grade_level,
         TO_CHAR(enrollment_date, 'YYYY-MM-DD') as enrollment_date
       FROM students 
-      ORDER BY student_id ASC
+      ORDER BY student_id DESC
     `);
     
     console.log('Sending students data:', result.rows);
@@ -126,7 +126,7 @@ app.get('/teachers', async (req, res) => {
         TO_CHAR(hire_date, 'YYYY-MM-DD') as hire_date,
         status
       FROM teachers 
-      ORDER BY teacher_id ASC
+      ORDER BY teacher_id DESC
     `);
     console.log('Sending teachers data:', result.rows);
     res.json(result.rows);
@@ -196,7 +196,7 @@ app.get('/classes', async (req, res) => {
       SELECT c.*, t.last_name as teacher_name
       FROM classes c
       LEFT JOIN teachers t ON c.teacher_id = t.teacher_id
-      ORDER BY c.class_id ASC
+      ORDER BY c.class_id DESC
     `);
     
     console.log('Sending classes data:', result.rows);
@@ -268,7 +268,7 @@ app.get('/grades', async (req, res) => {
         fourth_quarter,
         TO_CHAR(grade_date, 'YYYY-MM-DD') as grade_date
       FROM grades 
-      ORDER BY grade_id ASC
+      ORDER BY grade_id DESC
     `);
 
     const formattedGrades = result.rows;
@@ -349,7 +349,7 @@ app.get('/attendance', async (req, res) => {
       FROM attendance a
       LEFT JOIN students s ON a.student_id = s.student_id
       LEFT JOIN classes c ON a.class_id = c.class_id
-      ORDER BY a.attendance_date ASC, a.attendance_id ASC
+      ORDER BY a.attendance_date DESC, a.attendance_id DESC
     `);
     console.log('Attendance records fetched:', result.rows);
     res.json(result.rows);
@@ -456,7 +456,7 @@ app.get('/departments', async (req, res) => {
         office_location,
         contact_email
       FROM departments 
-      ORDER BY department_id ASC
+      ORDER BY department_id DESC
     `);
     console.log('Departments fetched:', result.rows);
     res.json(result.rows);
@@ -522,7 +522,7 @@ app.get('/courses', async (req, res) => {
         credits,
         description
       FROM courses 
-      ORDER BY course_id ASC
+      ORDER BY course_id DESC
     `);
     console.log('Sending courses data:', result.rows);
     res.json(result.rows);
@@ -822,19 +822,93 @@ app.delete('/courses/:id', async (req, res) => {
   }
 });
 
-// Update grade endpoint
+// Update student endpoint
+app.put('/students/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    console.log('Updating student:', id);
+    console.log('Update data:', updates);
+
+    if (!updates.first_name || !updates.last_name) {
+      return res.status(400).json({ error: 'First name and last name are required' });
+    }
+
+    const result = await pool.query(
+      `UPDATE students 
+       SET first_name = $1, 
+           last_name = $2,
+           middle_name = $3,
+           gender = $4,
+           date_of_birth = $5,
+           phone = $6,
+           address = $7,
+           grade_level = $8,
+           enrollment_date = $9,
+           status = $10
+       WHERE student_id = $11
+       RETURNING *`,  
+      [
+        updates.first_name,
+        updates.last_name,
+        updates.middle_name,
+        updates.gender,
+        updates.date_of_birth,
+        updates.phone,
+        updates.address,
+        updates.grade_level,
+        updates.enrollment_date,
+        updates.status,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating student:', error);
+    res.status(500).json({ 
+      error: 'Failed to update student',
+      details: error.message
+    });
+  }
+});
+
+// Update grades endpoint
 app.put('/grades/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { quarter, grade, grade_date } = req.body;
+    const updates = req.body;
+    
+    if (!updates.student_id || !updates.class_id) {
+      return res.status(400).json({ error: 'Student ID and Class ID are required' });
+    }
 
     const result = await pool.query(
       `UPDATE grades 
-       SET ${quarter} = $1, 
-           grade_date = $2
-       WHERE grade_id = $3
+       SET student_id = $1,
+           class_id = $2,
+           first_quarter = $3,
+           second_quarter = $4,
+           third_quarter = $5,
+           fourth_quarter = $6,
+           grade_date = $7
+       WHERE grade_id = $8
        RETURNING *`,
-      [grade, grade_date, id]
+      [
+        updates.student_id,
+        updates.class_id,
+        updates.first_quarter,
+        updates.second_quarter,
+        updates.third_quarter,
+        updates.fourth_quarter,
+        updates.grade_date,
+        id
+      ]
     );
 
     if (result.rows.length === 0) {
@@ -844,7 +918,51 @@ app.put('/grades/:id', async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating grade:', error);
-    res.status(500).json({ error: 'Failed to update grade' });
+    res.status(500).json({ 
+      error: 'Failed to update grade',
+      details: error.message
+    });
+  }
+});
+
+// Update attendance endpoint
+app.put('/attendance/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    if (!updates.student_id || !updates.class_id || !updates.attendance_date) {
+      return res.status(400).json({ error: 'Student ID, Class ID, and Attendance Date are required' });
+    }
+
+    const result = await pool.query(
+      `UPDATE attendance 
+       SET student_id = $1,
+           class_id = $2,
+           attendance_date = $3,
+           status = $4
+       WHERE attendance_id = $5
+       RETURNING *`,
+      [
+        updates.student_id,
+        updates.class_id,
+        updates.attendance_date,
+        updates.status,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Attendance record not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating attendance:', error);
+    res.status(500).json({ 
+      error: 'Failed to update attendance',
+      details: error.message
+    });
   }
 });
 
@@ -957,6 +1075,421 @@ app.delete('/api/:table/:id', async (req, res) => {
   } catch (error) {
     console.error(`Error deleting ${table} record:`, error);
     res.status(500).json({ error: `Failed to delete ${table} record` });
+  }
+});
+
+// Add these PUT endpoints for each table
+
+// Update teacher
+app.put('/teachers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const result = await pool.query(
+      `UPDATE teachers 
+       SET first_name = $1, 
+           last_name = $2,
+           middle_name = $3,
+           gender = $4,
+           email = $5,
+           phone = $6,
+           department = $7,
+           hire_date = $8,
+           status = $9
+       WHERE teacher_id = $10
+       RETURNING *`,
+      [
+        updates.first_name,
+        updates.last_name,
+        updates.middle_name,
+        updates.gender,
+        updates.email,
+        updates.phone,
+        updates.department,
+        updates.hire_date,
+        updates.status,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Teacher not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating teacher:', error);
+    res.status(500).json({ error: 'Failed to update teacher' });
+  }
+});
+
+// Update class
+app.put('/classes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const result = await pool.query(
+      `UPDATE classes 
+       SET class_name = $1,
+           teacher_id = $2,
+           room_number = $3,
+           schedule_time = $4,
+           max_capacity = $5
+       WHERE class_id = $6
+       RETURNING *`,
+      [
+        updates.class_name,
+        updates.teacher_id,
+        updates.room_number,
+        updates.schedule_time,
+        updates.max_capacity,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating class:', error);
+    res.status(500).json({ error: 'Failed to update class' });
+  }
+});
+
+// Update department endpoint
+app.put('/departments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    console.log('Updating department:', id);
+    console.log('Update data:', updates);
+
+    if (!updates.department_name) {
+      return res.status(400).json({ error: 'Department name is required' });
+    }
+
+    const result = await pool.query(
+      `UPDATE departments 
+       SET department_name = $1,
+           head_teacher_id = $2,
+           office_location = $3,
+           contact_email = $4
+       WHERE department_id = $5
+       RETURNING *`,
+      [
+        updates.department_name,
+        updates.head_teacher_id,
+        updates.office_location,
+        updates.contact_email,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    console.log('Department updated successfully:', result.rows[0]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating department:', error);
+    res.status(500).json({ 
+      error: 'Failed to update department',
+      details: error.message,
+      hint: error.hint
+    });
+  }
+});
+
+// Update course endpoint
+app.put('/courses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    console.log('Updating course:', id);
+    console.log('Update data:', updates);
+
+    if (!updates.course_name) {
+      return res.status(400).json({ error: 'Course name is required' });
+    }
+
+    const result = await pool.query(
+      `UPDATE courses 
+       SET course_name = $1,
+           department_id = $2,
+           credits = $3,
+           description = $4
+       WHERE course_id = $5
+       RETURNING *`,
+      [
+        updates.course_name,
+        updates.department_id,
+        updates.credits,
+        updates.description,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    console.log('Course updated successfully:', result.rows[0]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating course:', error);
+    res.status(500).json({ 
+      error: 'Failed to update course',
+      details: error.message,
+      hint: error.hint
+    });
+  }
+});
+
+// Add PATCH endpoints for partial updates
+
+// Patch student endpoint
+app.patch('/students/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    // Build dynamic SET clause based on provided fields
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(', ');
+    
+    const values = [...Object.values(updates), id];
+    
+    const query = `
+      UPDATE students 
+      SET ${setClause} 
+      WHERE student_id = $${values.length}
+      RETURNING *`;
+    
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error patching student:', error);
+    res.status(500).json({ 
+      error: 'Failed to update student',
+      details: error.message 
+    });
+  }
+});
+
+// Patch teacher endpoint
+app.patch('/teachers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(', ');
+    
+    const values = [...Object.values(updates), id];
+    
+    const result = await pool.query(`
+      UPDATE teachers 
+      SET ${setClause} 
+      WHERE teacher_id = $${values.length}
+      RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Teacher not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error patching teacher:', error);
+    res.status(500).json({ 
+      error: 'Failed to update teacher',
+      details: error.message 
+    });
+  }
+});
+
+// Patch class endpoint
+app.patch('/classes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(', ');
+    
+    const values = [...Object.values(updates), id];
+    
+    const result = await pool.query(`
+      UPDATE classes 
+      SET ${setClause} 
+      WHERE class_id = $${values.length}
+      RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error patching class:', error);
+    res.status(500).json({ 
+      error: 'Failed to update class',
+      details: error.message 
+    });
+  }
+});
+
+// Patch grade endpoint
+app.patch('/grades/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(', ');
+    
+    const values = [...Object.values(updates), id];
+    
+    const result = await pool.query(`
+      UPDATE grades 
+      SET ${setClause} 
+      WHERE grade_id = $${values.length}
+      RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Grade not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error patching grade:', error);
+    res.status(500).json({ 
+      error: 'Failed to update grade',
+      details: error.message 
+    });
+  }
+});
+
+// Patch attendance endpoint
+app.patch('/attendance/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(', ');
+    
+    const values = [...Object.values(updates), id];
+    
+    const result = await pool.query(`
+      UPDATE attendance 
+      SET ${setClause} 
+      WHERE attendance_id = $${values.length}
+      RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Attendance record not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error patching attendance:', error);
+    res.status(500).json({ 
+      error: 'Failed to update attendance',
+      details: error.message 
+    });
+  }
+});
+
+// Patch department endpoint
+app.patch('/departments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(', ');
+    
+    const values = [...Object.values(updates), id];
+    
+    const result = await pool.query(`
+      UPDATE departments 
+      SET ${setClause} 
+      WHERE department_id = $${values.length}
+      RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error patching department:', error);
+    res.status(500).json({ 
+      error: 'Failed to update department',
+      details: error.message 
+    });
+  }
+});
+
+// Patch course endpoint
+app.patch('/courses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(', ');
+    
+    const values = [...Object.values(updates), id];
+    
+    const result = await pool.query(`
+      UPDATE courses 
+      SET ${setClause} 
+      WHERE course_id = $${values.length}
+      RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error patching course:', error);
+    res.status(500).json({ 
+      error: 'Failed to update course',
+      details: error.message 
+    });
   }
 });
 

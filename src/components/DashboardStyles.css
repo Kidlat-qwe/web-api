@@ -2,25 +2,25 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    background-color: #1a1a1a;
-    padding: 0;
+    background-color: var(--background-color);
+    padding: 20px;
     margin: 0;
     gap: 15px;
 }
 
 .dashboard-header {
-    background-color: #2d2d2d;
-    padding: 12px;
-    width: 100%;
-    margin: 0;
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
 }
 
 .dashboard-title {
-    color: #ffffff;
-    font-size: 20px;
+    color: white;
+    font-size: 24px;
     margin: 0;
-    text-align: center;
-    font-weight: 500;
+    text-align: left;
+    font-weight: 600;
     letter-spacing: 0.5px;
 }
 
@@ -32,54 +32,69 @@
 }
 
 .stat-card {
-    background-color: #2d2d2d;
-    padding: 15px;
+    background: var(--surface-color);
+    padding: 20px;
     border-radius: 8px;
     text-align: center;
     transition: transform 0.2s;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    background: var(--hover-color);
 }
 
 .stat-icon {
     font-size: 24px;
     margin-bottom: 10px;
+    color: var(--primary-color);
 }
 
 .stat-card h3 {
-    font-size: 12px;
+    font-size: 14px;
     margin: 0 0 8px;
+    color: var(--text-secondary);
+    font-weight: 600;
 }
 
 .stat-card p {
     font-size: 24px;
     margin: 0;
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .charts-grid {
     padding: 0 15px 15px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+    gap: 20px;
     flex: 1;
     min-height: 300px;
 }
 
 .chart-container {
-    background-color: #2d2d2d;
+    background: var(--surface-color);
     border-radius: 8px;
     height: 300px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
 }
 
 .chart-header {
-    padding: 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--hover-color);
 }
 
 .chart-header h2 {
     font-size: 16px;
     margin: 0;
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .chart-content {
@@ -90,52 +105,68 @@
 /* Chart Styles */
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-    stroke: #404040;
+    stroke: var(--border-color);
 }
 
 .recharts-cartesian-axis-line {
-    stroke: #404040;
+    stroke: var(--border-color);
 }
 
 .recharts-text {
-    fill: #888;
+    fill: var(--text-secondary);
+}
+
+/* Bar Chart specific colors */
+.recharts-bar-rectangle path {
+    fill: var(--primary-color);
+}
+
+/* Pie Chart colors */
+.recharts-pie-sector path {
+    stroke: var(--surface-color);
+}
+
+.recharts-pie path:nth-child(1) {
+    fill: var(--primary-color);
+}
+
+.recharts-pie path:nth-child(2) {
+    fill: var(--warning-color);
+}
+
+.recharts-pie path:nth-child(3) {
+    fill: var(--danger-color);
 }
 
 .recharts-tooltip-wrapper {
-    background-color: #2d2d2d !important;
-    border: none !important;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--surface-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px;
+    box-shadow: var(--shadow-sm);
 }
 
 .recharts-default-tooltip {
-    background-color: #2d2d2d !important;
+    background: var(--surface-color) !important;
     border: none !important;
     padding: 12px !important;
 }
 
 .recharts-tooltip-label {
-    color: #ffffff !important;
+    color: var(--text-primary) !important;
 }
 
 .recharts-tooltip-item {
-    color: #888 !important;
+    color: var(--text-secondary) !important;
 }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
     .dashboard-container {
         padding: 15px;
-        gap: 15px;
-    }
-
-    .stats-summary {
-        gap: 15px;
     }
 
     .charts-grid {
         grid-template-columns: 1fr;
-        gap: 15px;
     }
 }
 
@@ -143,20 +174,11 @@
     .stats-summary {
         grid-template-columns: repeat(2, 1fr);
     }
-
-    .stat-card {
-        padding: 15px;
-    }
-
-    .stat-card p {
-        font-size: 24px;
-    }
 }
 
 @media (max-width: 480px) {
     .dashboard-container {
         padding: 10px;
-        gap: 10px;
     }
 
     .stats-summary {

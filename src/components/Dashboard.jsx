@@ -182,10 +182,15 @@ const Dashboard = () => {
           <div className="chart-content">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={studentGradeData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="grade" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="grade" stroke="#333" />
+                <YAxis stroke="#333" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'white',
+                    border: '1px solid #ddd'
+                  }} 
+                />
                 <Bar dataKey="count" fill="#3498db" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -213,8 +218,17 @@ const Dashboard = () => {
                     <Cell key={`cell-${index}`} fill={ATTENDANCE_COLORS[index % ATTENDANCE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend verticalAlign="bottom" height={36} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'white',
+                    border: '1px solid #ddd'
+                  }} 
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  formatter={(value) => <span style={{ color: '#333' }}>{value}</span>}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>

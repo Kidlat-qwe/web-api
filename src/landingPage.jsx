@@ -60,6 +60,46 @@ const App = () => {
   // Add this state for editing
   const [editingGrade, setEditingGrade] = useState(null);
 
+  // Add these states for editing
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+
+  // Add this function at the top level of your App component
+  const getStudentNameById = (studentId) => {
+    const student = students.find(s => (s.student_id || s.id) === studentId);
+    if (student) {
+      return `${student.first_name} ${student.last_name}`;
+    }
+    return 'Unknown Student';
+  };
+
+  // Add this function next to getStudentNameById
+  const getClassNameById = (classId) => {
+    const classItem = classes.find(c => c.class_id === classId);
+    if (classItem) {
+      return `${classItem.class_name}`;
+    }
+    return 'Unknown Class';
+  };
+
+  // Add this function next to getStudentNameById and getClassNameById
+  const getTeacherNameById = (teacherId) => {
+    const teacher = teachers.find(t => t.teacher_id === teacherId);
+    if (teacher) {
+      return `${teacher.first_name} ${teacher.last_name}`;
+    }
+    return 'Unknown Teacher';
+  };
+
+  // Add this function next to other getter functions
+  const getDepartmentNameById = (departmentId) => {
+    const department = departments.find(d => d.department_id === departmentId);
+    if (department) {
+      return `${department.department_name}`;
+    }
+    return 'Unknown Department';
+  };
+
   // Update the AddRecordForm component
   const AddRecordForm = ({ onSubmit, onClose }) => {
     const [formData, setFormData] = useState({
@@ -528,36 +568,42 @@ const App = () => {
         case 'students':
           response = await axios.get(`${API_BASE_URL}/students`);
           setStudents(response.data);
+          setFilteredData(response.data);
           break;
         case 'teachers':
           response = await axios.get(`${API_BASE_URL}/teachers`);
           setTeachers(response.data);
+          setFilteredData(response.data);
           break;
         case 'classes':
           response = await axios.get(`${API_BASE_URL}/classes`);
           setClasses(response.data);
+          setFilteredData(response.data);
           break;
         case 'grades':
           response = await axios.get(`${API_BASE_URL}/grades`);
           setGrades(response.data);
+          setFilteredData(response.data);
           break;
         case 'attendance':
           response = await axios.get(`${API_BASE_URL}/attendance`);
           setAttendance(response.data);
+          setFilteredData(response.data);
           break;
         case 'departments':
           response = await axios.get(`${API_BASE_URL}/departments`);
           setDepartments(response.data);
+          setFilteredData(response.data);
           break;
         case 'courses':
           response = await axios.get(`${API_BASE_URL}/courses`);
           setCourses(response.data);
+          setFilteredData(response.data);
           break;
         default:
           response = await axios.get(`${API_BASE_URL}/api/${activeTable}`);
       }
       console.log(`Refreshed ${activeTable} data:`, response.data);
-      setFilteredData(response.data);
       setError(null);
     } catch (error) {
       console.error(`Error refreshing ${activeTable} data:`, error);
@@ -780,6 +826,7 @@ const App = () => {
                 <th>Grade</th>
                 <th>Enrollment Date</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -792,7 +839,12 @@ const App = () => {
                       onChange={() => handleRecordSelection(student.student_id || student.id)}
                     />
                   </td>
-                  <td>{student.student_id || student.id}</td>
+                  <td className="student-id-tooltip">
+                    {student.student_id || student.id}
+                    <div className="tooltip-content">
+                      {`${student.first_name} ${student.last_name}`}
+                    </div>
+                  </td>
                   <td>{student.last_name || '-'}</td>
                   <td>{student.first_name || '-'}</td>
                   <td>{student.middle_name || '-'}</td>
@@ -803,6 +855,14 @@ const App = () => {
                   <td>{student.grade_level || '-'}</td>
                   <td>{student.enrollment_date ? new Date(student.enrollment_date).toLocaleDateString() : '-'}</td>
                   <td>{student.status || '-'}</td>
+                  <td>
+                    <button 
+                      onClick={() => handleEditClick(student)}
+                      className="edit-btn"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -825,6 +885,7 @@ const App = () => {
                 <th>Department</th>
                 <th>Hire Date</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -847,6 +908,14 @@ const App = () => {
                   <td>{teacher.department}</td>
                   <td>{new Date(teacher.hire_date).toLocaleDateString()}</td>
                   <td>{teacher.status}</td>
+                  <td>
+                    <button 
+                      onClick={() => handleEditClick(teacher)}
+                      className="edit-btn"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -859,12 +928,13 @@ const App = () => {
             <thead>
               <tr>
                 <th>Select</th>
-                <th>ID</th>
+                <th>Class ID</th>
                 <th>Class Name</th>
                 <th>Teacher</th>
                 <th>Room Number</th>
                 <th>Schedule Time</th>
                 <th>Max Capacity</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -877,12 +947,25 @@ const App = () => {
                       onChange={() => handleRecordSelection(class_item.class_id)}
                     />
                   </td>
-                  <td>{class_item.class_id}</td>
+                  <td className="student-id-tooltip">
+                    {class_item.class_id}
+                    <div className="tooltip-content">
+                      {class_item.class_name}
+                    </div>
+                  </td>
                   <td>{class_item.class_name}</td>
-                  <td>{`${class_item.teacher_id} - ${class_item.teacher_name || 'N/A'}`}</td>
+                  <td>{class_item.teacher_name || class_item.teacher_id}</td>
                   <td>{class_item.room_number}</td>
                   <td>{class_item.schedule_time}</td>
                   <td>{class_item.max_capacity}</td>
+                  <td>
+                    <button 
+                      onClick={() => handleEditClick(class_item)}
+                      className="edit-btn"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -903,6 +986,7 @@ const App = () => {
                 <th>3rd Quarter</th>
                 <th>4th Quarter</th>
                 <th>Grade Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -916,109 +1000,31 @@ const App = () => {
                     />
                   </td>
                   <td>{grade.grade_id}</td>
-                  <td>{grade.student_id}</td>
-                  <td>{grade.class_id}</td>
-                  <td>
-                    {editingGrade?.grade_id === grade.grade_id && editingGrade.quarter === 'first' ? (
-                      <div className="edit-grade-cell">
-                        <input
-                          type="number"
-                          value={editingGrade.tempGrade}
-                          onChange={(e) => setEditingGrade({
-                            ...editingGrade,
-                            tempGrade: e.target.value
-                          })}
-                          min="0"
-                          max="100"
-                          step="0.01"
-                        />
-                        <div className="edit-actions">
-                          <button onClick={handleSaveEdit}>✓</button>
-                          <button onClick={() => setEditingGrade(null)}>✕</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grade-cell" onClick={() => handleEdit(grade, 'first')}>
-                        {grade.first_quarter || '-'}
-                      </div>
-                    )}
+                  <td className="student-id-tooltip">
+                    {grade.student_id}
+                    <div className="tooltip-content">
+                      {getStudentNameById(grade.student_id)}
+                    </div>
                   </td>
-                  <td>
-                    {editingGrade?.grade_id === grade.grade_id && editingGrade.quarter === 'second' ? (
-                      <div className="edit-grade-cell">
-                        <input
-                          type="number"
-                          value={editingGrade.tempGrade}
-                          onChange={(e) => setEditingGrade({
-                            ...editingGrade,
-                            tempGrade: e.target.value
-                          })}
-                          min="0"
-                          max="100"
-                          step="0.01"
-                        />
-                        <div className="edit-actions">
-                          <button onClick={handleSaveEdit}>✓</button>
-                          <button onClick={() => setEditingGrade(null)}>✕</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grade-cell" onClick={() => handleEdit(grade, 'second')}>
-                        {grade.second_quarter || '-'}
-                      </div>
-                    )}
+                  <td className="student-id-tooltip">
+                    {grade.class_id}
+                    <div className="tooltip-content">
+                      {getClassNameById(grade.class_id)}
+                    </div>
                   </td>
-                  <td>
-                    {editingGrade?.grade_id === grade.grade_id && editingGrade.quarter === 'third' ? (
-                      <div className="edit-grade-cell">
-                        <input
-                          type="number"
-                          value={editingGrade.tempGrade}
-                          onChange={(e) => setEditingGrade({
-                            ...editingGrade,
-                            tempGrade: e.target.value
-                          })}
-                          min="0"
-                          max="100"
-                          step="0.01"
-                        />
-                        <div className="edit-actions">
-                          <button onClick={handleSaveEdit}>✓</button>
-                          <button onClick={() => setEditingGrade(null)}>✕</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grade-cell" onClick={() => handleEdit(grade, 'third')}>
-                        {grade.third_quarter || '-'}
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    {editingGrade?.grade_id === grade.grade_id && editingGrade.quarter === 'fourth' ? (
-                      <div className="edit-grade-cell">
-                        <input
-                          type="number"
-                          value={editingGrade.tempGrade}
-                          onChange={(e) => setEditingGrade({
-                            ...editingGrade,
-                            tempGrade: e.target.value
-                          })}
-                          min="0"
-                          max="100"
-                          step="0.01"
-                        />
-                        <div className="edit-actions">
-                          <button onClick={handleSaveEdit}>✓</button>
-                          <button onClick={() => setEditingGrade(null)}>✕</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grade-cell" onClick={() => handleEdit(grade, 'fourth')}>
-                        {grade.fourth_quarter || '-'}
-                      </div>
-                    )}
-                  </td>
+                  <td>{grade.first_quarter}</td>
+                  <td>{grade.second_quarter}</td>
+                  <td>{grade.third_quarter}</td>
+                  <td>{grade.fourth_quarter}</td>
                   <td>{grade.grade_date}</td>
+                  <td>
+                    <button 
+                      onClick={() => handleEditClick(grade)}
+                      className="edit-btn"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1036,23 +1042,42 @@ const App = () => {
                 <th>Class ID</th>
                 <th>Status</th>
                 <th>Attendance Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredData.map((record) => (
-                <tr key={record.attendance_id}>
+              {filteredData.map((attendance) => (
+                <tr key={attendance.attendance_id}>
                   <td>
                     <input
                       type="checkbox"
-                      checked={selectedRecords.includes(record.attendance_id)}
-                      onChange={() => handleRecordSelection(record.attendance_id)}
+                      checked={selectedRecords.includes(attendance.attendance_id)}
+                      onChange={() => handleRecordSelection(attendance.attendance_id)}
                     />
                   </td>
-                  <td>{record.attendance_id}</td>
-                  <td>{record.student_id}</td>
-                  <td>{record.class_id}</td>
-                  <td>{record.status}</td>
-                  <td>{record.attendance_date}</td>
+                  <td>{attendance.attendance_id}</td>
+                  <td className="student-id-tooltip">
+                    {attendance.student_id}
+                    <div className="tooltip-content">
+                      {getStudentNameById(attendance.student_id)}
+                    </div>
+                  </td>
+                  <td className="student-id-tooltip">
+                    {attendance.class_id}
+                    <div className="tooltip-content">
+                      {getClassNameById(attendance.class_id)}
+                    </div>
+                  </td>
+                  <td>{attendance.status}</td>
+                  <td>{attendance.attendance_date}</td>
+                  <td>
+                    <button 
+                      onClick={() => handleEditClick(attendance)}
+                      className="edit-btn"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1070,6 +1095,7 @@ const App = () => {
                 <th>Head Teacher ID</th>
                 <th>Office Location</th>
                 <th>Contact Email</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1084,9 +1110,22 @@ const App = () => {
                   </td>
                   <td>{department.department_id}</td>
                   <td>{department.department_name}</td>
-                  <td>{department.head_teacher_id || '-'}</td>
+                  <td className="student-id-tooltip">
+                    {department.head_teacher_id}
+                    <div className="tooltip-content">
+                      {getTeacherNameById(department.head_teacher_id)}
+                    </div>
+                  </td>
                   <td>{department.office_location || '-'}</td>
                   <td>{department.contact_email || '-'}</td>
+                  <td>
+                    <button 
+                      onClick={() => handleEditClick(department)}
+                      className="edit-btn"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1104,6 +1143,7 @@ const App = () => {
                 <th>Department ID</th>
                 <th>Credits</th>
                 <th>Description</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1118,9 +1158,22 @@ const App = () => {
                   </td>
                   <td>{course.course_id}</td>
                   <td>{course.course_name}</td>
-                  <td>{course.department_id || '-'}</td>
+                  <td className="student-id-tooltip">
+                    {course.department_id}
+                    <div className="tooltip-content">
+                      {getDepartmentNameById(course.department_id)}
+                    </div>
+                  </td>
                   <td>{course.credits}</td>
                   <td>{course.description || '-'}</td>
+                  <td>
+                    <button 
+                      onClick={() => handleEditClick(course)}
+                      className="edit-btn"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1714,7 +1767,7 @@ const App = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows="3"
+                rows="4"
               />
             </div>
 
@@ -1962,6 +2015,911 @@ const App = () => {
     }
   };
 
+  // Add this function to handle edit button click
+  const handleEditClick = (record) => {
+    console.log('Edit clicked for record:', record);
+    setEditingRecord(record);
+    setShowEditForm(true);
+  };
+
+  // Add this function to handle edit form close
+  const handleEditClose = () => {
+    setEditingRecord(null);
+    setShowEditForm(false);
+  };
+
+  // Add this function to handle edit form submission
+  const handleEditSubmit = async (formData) => {
+    try {
+      console.log('Starting update with formData:', formData);
+      console.log('Current editingRecord:', editingRecord);
+      console.log('Active table:', activeTable);
+
+      if (!editingRecord) {
+        throw new Error('No record selected for editing');
+      }
+
+      let endpoint;
+      let id;
+      let response;
+
+      switch (activeTable) {
+        case 'students':
+          id = editingRecord.student_id || editingRecord.id;
+          endpoint = `http://localhost:8000/students/${id}`;
+          response = await axios.put(endpoint, {
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            middle_name: formData.middle_name || null,
+            gender: formData.gender,
+            date_of_birth: formData.date_of_birth,
+            phone: formData.phone || null,
+            address: formData.address || null,
+            grade_level: parseInt(formData.grade_level) || null,
+            enrollment_date: formData.enrollment_date,
+            status: formData.status || 'Active'
+          });
+          break;
+
+        case 'grades':
+          id = editingRecord.grade_id;
+          endpoint = `http://localhost:8000/grades/${id}`;
+          response = await axios.put(endpoint, {
+            student_id: parseInt(formData.student_id),
+            class_id: parseInt(formData.class_id),
+            first_quarter: parseFloat(formData.first_quarter) || null,
+            second_quarter: parseFloat(formData.second_quarter) || null,
+            third_quarter: parseFloat(formData.third_quarter) || null,
+            fourth_quarter: parseFloat(formData.fourth_quarter) || null,
+            grade_date: formData.grade_date
+          });
+          break;
+
+        case 'attendance':
+          id = editingRecord.attendance_id;
+          endpoint = `http://localhost:8000/attendance/${id}`;
+          response = await axios.put(endpoint, {
+            student_id: parseInt(formData.student_id),
+            class_id: parseInt(formData.class_id),
+            attendance_date: formData.attendance_date,
+            status: formData.status
+          });
+          break;
+
+        case 'departments':
+          id = editingRecord.department_id;
+          endpoint = `http://localhost:8000/departments/${id}`;
+          response = await axios.put(endpoint, {
+            department_name: formData.department_name,
+            head_teacher_id: parseInt(formData.head_teacher_id) || null,
+            office_location: formData.office_location,
+            contact_email: formData.contact_email
+          });
+          break;
+
+        case 'courses':
+          id = editingRecord.course_id;
+          endpoint = `http://localhost:8000/courses/${id}`;
+          response = await axios.put(endpoint, {
+            course_name: formData.course_name,
+            department_id: parseInt(formData.department_id) || null,
+            credits: parseInt(formData.credits) || 0,
+            description: formData.description
+          });
+          break;
+
+        case 'teachers':
+          id = editingRecord.teacher_id;
+          endpoint = `http://localhost:8000/teachers/${id}`;
+          response = await axios.put(endpoint, {
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            middle_name: formData.middle_name,
+            gender: formData.gender,
+            email: formData.email,
+            phone: formData.phone,
+            department: formData.department,
+            hire_date: formData.hire_date,
+            status: formData.status
+          });
+          break;
+
+        case 'classes':
+          id = editingRecord.class_id;
+          endpoint = `http://localhost:8000/classes/${id}`;
+          response = await axios.put(endpoint, {
+            class_name: formData.class_name,
+            teacher_id: parseInt(formData.teacher_id) || null,
+            room_number: formData.room_number,
+            schedule_time: formData.schedule_time,
+            max_capacity: parseInt(formData.max_capacity) || null
+          });
+          break;
+
+        default:
+          throw new Error(`Invalid table type: ${activeTable}`);
+      }
+
+      if (response && response.data) {
+        console.log('Update successful:', response.data);
+        
+        // Refresh the data based on the active table
+        let refreshResponse;
+        
+        switch (activeTable) {
+          case 'students':
+            refreshResponse = await axios.get('http://localhost:8000/students');
+            setStudents(refreshResponse.data);
+            break;
+          case 'grades':
+            refreshResponse = await axios.get('http://localhost:8000/grades');
+            setGrades(refreshResponse.data);
+            break;
+          case 'attendance':
+            refreshResponse = await axios.get('http://localhost:8000/attendance');
+            setAttendance(refreshResponse.data);
+            break;
+          case 'departments':
+            refreshResponse = await axios.get('http://localhost:8000/departments');
+            setDepartments(refreshResponse.data);
+            break;
+          case 'courses':
+            refreshResponse = await axios.get('http://localhost:8000/courses');
+            setCourses(refreshResponse.data);
+            break;
+          case 'teachers':
+            refreshResponse = await axios.get('http://localhost:8000/teachers');
+            setTeachers(refreshResponse.data);
+            break;
+          case 'classes':
+            refreshResponse = await axios.get('http://localhost:8000/classes');
+            setClasses(refreshResponse.data);
+            break;
+        }
+        
+        if (refreshResponse) {
+          setFilteredData(refreshResponse.data);
+          setShowEditForm(false);
+          setEditingRecord(null);
+          alert(`${activeTable.slice(0, -1)} updated successfully!`);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleEditSubmit:', error);
+      console.error('Error details:', {
+        formData,
+        editingRecord,
+        activeTable,
+        error: error.response?.data || error.message
+      });
+      alert(`Failed to update ${activeTable.slice(0, -1)}: ${error.response?.data?.error || error.message}`);
+    }
+  };
+
+  // Add or update the EditStudentForm component
+  const EditStudentForm = ({ student, onSubmit, onClose }) => {
+    const [formData, setFormData] = useState({
+      student_id: student.student_id || student.id,
+      first_name: student.first_name || '',
+      last_name: student.last_name || '',
+      middle_name: student.middle_name || '',
+      gender: student.gender || 'Male',
+      date_of_birth: student.date_of_birth || '',
+      phone: student.phone || '',
+      address: student.address || '',
+      grade_level: student.grade_level || '',
+      enrollment_date: student.enrollment_date || '',
+      status: student.status || 'Active'
+    });
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      console.log('Submitting form with data:', formData);
+      onSubmit(formData);
+    };
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    return (
+      <div className="prompt-overlay">
+        <div className="prompt-modal">
+          <div className="prompt-header">
+            <h3>Edit Student</h3>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="prompt-field">
+              <label>First Name*</label>
+              <input
+                type="text"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Last Name*</label>
+              <input
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Middle Name</label>
+              <input
+                type="text"
+                name="middle_name"
+                value={formData.middle_name}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Gender*</label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                required
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div className="prompt-field">
+              <label>Date of Birth*</label>
+              <input
+                type="date"
+                name="date_of_birth"
+                value={formData.date_of_birth}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Address</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Grade Level</label>
+              <input
+                type="number"
+                name="grade_level"
+                value={formData.grade_level}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Enrollment Date*</label>
+              <input
+                type="date"
+                name="enrollment_date"
+                value={formData.enrollment_date}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Status*</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            <div className="prompt-actions">
+              <button type="submit" className="save-btn">Save Changes</button>
+              <button type="button" onClick={onClose} className="cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  // Add these EditForm components for all tables
+  const EditTeacherForm = ({ teacher, onSubmit, onClose }) => {
+    const [formData, setFormData] = useState({
+      first_name: teacher.first_name || '',
+      last_name: teacher.last_name || '',
+      middle_name: teacher.middle_name || '',
+      gender: teacher.gender || 'Male',
+      email: teacher.email || '',
+      phone: teacher.phone || '',
+      department: teacher.department || '',
+      hire_date: teacher.hire_date || '',
+      status: teacher.status || 'Active'
+    });
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      onSubmit(formData);
+    };
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    return (
+      <div className="prompt-overlay">
+        <div className="prompt-modal">
+          <div className="prompt-header">
+            <h3>Edit Teacher</h3>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="prompt-field">
+              <label>First Name*</label>
+              <input
+                type="text"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Last Name*</label>
+              <input
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Middle Name</label>
+              <input
+                type="text"
+                name="middle_name"
+                value={formData.middle_name}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Gender*</label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                required
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div className="prompt-field">
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Phone</label>
+              <input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Department*</label>
+              <input
+                type="text"
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Hire Date*</label>
+              <input
+                type="date"
+                name="hire_date"
+                value={formData.hire_date}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Status*</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
+              >
+                <option value="Active">Active</option>
+                <option value="On Leave">On Leave</option>
+                <option value="Retired">Retired</option>
+                <option value="Terminated">Terminated</option>
+              </select>
+            </div>
+            <div className="prompt-actions">
+              <button type="submit" className="save-btn">Save Changes</button>
+              <button type="button" onClick={onClose} className="cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const EditClassForm = ({ class_item, onSubmit, onClose }) => {
+    const [formData, setFormData] = useState({
+      class_name: class_item.class_name || '',
+      teacher_id: class_item.teacher_id || '',
+      room_number: class_item.room_number || '',
+      schedule_time: class_item.schedule_time || '',
+      max_capacity: class_item.max_capacity || ''
+    });
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      onSubmit(formData);
+    };
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    return (
+      <div className="prompt-overlay">
+        <div className="prompt-modal">
+          <div className="prompt-header">
+            <h3>Edit Class</h3>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="prompt-field">
+              <label>Class Name*</label>
+              <input
+                type="text"
+                name="class_name"
+                value={formData.class_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Teacher ID*</label>
+              <input
+                type="number"
+                name="teacher_id"
+                value={formData.teacher_id}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Room Number*</label>
+              <input
+                type="text"
+                name="room_number"
+                value={formData.room_number}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Schedule Time*</label>
+              <input
+                type="text"
+                name="schedule_time"
+                value={formData.schedule_time}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Max Capacity*</label>
+              <input
+                type="number"
+                name="max_capacity"
+                value={formData.max_capacity}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-actions">
+              <button type="submit" className="save-btn">Save Changes</button>
+              <button type="button" onClick={onClose} className="cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const EditDepartmentForm = ({ department, onSubmit, onClose }) => {
+    const [formData, setFormData] = useState({
+      department_id: department.department_id,
+      department_name: department.department_name || '',
+      head_teacher_id: department.head_teacher_id || '',
+      office_location: department.office_location || '',
+      contact_email: department.contact_email || ''
+    });
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      console.log('Submitting department update:', formData);
+      onSubmit(formData);
+    };
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    return (
+      <div className="prompt-overlay">
+        <div className="prompt-modal">
+          <div className="prompt-header">
+            <h3>Edit Department</h3>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="prompt-field">
+              <label>Department Name*</label>
+              <input
+                type="text"
+                name="department_name"
+                value={formData.department_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Head Teacher ID</label>
+              <input
+                type="number"
+                name="head_teacher_id"
+                value={formData.head_teacher_id}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Office Location</label>
+              <input
+                type="text"
+                name="office_location"
+                value={formData.office_location}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Contact Email</label>
+              <input
+                type="email"
+                name="contact_email"
+                value={formData.contact_email}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-actions">
+              <button type="submit" className="save-btn">Save Changes</button>
+              <button type="button" onClick={onClose} className="cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const EditCourseForm = ({ course, onSubmit, onClose }) => {
+    const [formData, setFormData] = useState({
+      course_id: course.course_id,
+      course_name: course.course_name || '',
+      department_id: course.department_id || '',
+      credits: course.credits || '',
+      description: course.description || ''
+    });
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      console.log('Submitting course update:', formData);
+      onSubmit(formData);
+    };
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    return (
+      <div className="prompt-overlay">
+        <div className="prompt-modal">
+          <div className="prompt-header">
+            <h3>Edit Course</h3>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="prompt-field">
+              <label>Course Name*</label>
+              <input
+                type="text"
+                name="course_name"
+                value={formData.course_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Department ID</label>
+              <input
+                type="number"
+                name="department_id"
+                value={formData.department_id}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Credits*</label>
+              <input
+                type="number"
+                name="credits"
+                value={formData.credits}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-actions">
+              <button type="submit" className="save-btn">Save Changes</button>
+              <button type="button" onClick={onClose} className="cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  // Add these EditForm components for grades and attendance
+
+  const EditGradeForm = ({ grade, onSubmit, onClose }) => {
+    const [formData, setFormData] = useState({
+      grade_id: grade.grade_id,
+      student_id: grade.student_id || '',
+      class_id: grade.class_id || '',
+      first_quarter: grade.first_quarter || '',
+      second_quarter: grade.second_quarter || '',
+      third_quarter: grade.third_quarter || '',
+      fourth_quarter: grade.fourth_quarter || '',
+      grade_date: grade.grade_date || new Date().toISOString().split('T')[0]
+    });
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      onSubmit(formData);
+    };
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    return (
+      <div className="prompt-overlay">
+        <div className="prompt-modal">
+          <div className="prompt-header">
+            <h3>Edit Grade</h3>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="prompt-field">
+              <label>Student ID*</label>
+              <input
+                type="number"
+                name="student_id"
+                value={formData.student_id}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Class ID*</label>
+              <input
+                type="number"
+                name="class_id"
+                value={formData.class_id}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>First Quarter</label>
+              <input
+                type="number"
+                step="0.01"
+                name="first_quarter"
+                value={formData.first_quarter}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Second Quarter</label>
+              <input
+                type="number"
+                step="0.01"
+                name="second_quarter"
+                value={formData.second_quarter}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Third Quarter</label>
+              <input
+                type="number"
+                step="0.01"
+                name="third_quarter"
+                value={formData.third_quarter}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Fourth Quarter</label>
+              <input
+                type="number"
+                step="0.01"
+                name="fourth_quarter"
+                value={formData.fourth_quarter}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Grade Date*</label>
+              <input
+                type="date"
+                name="grade_date"
+                value={formData.grade_date}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-actions">
+              <button type="submit" className="save-btn">Save Changes</button>
+              <button type="button" onClick={onClose} className="cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const EditAttendanceForm = ({ attendance, onSubmit, onClose }) => {
+    const [formData, setFormData] = useState({
+      attendance_id: attendance.attendance_id,
+      student_id: attendance.student_id || '',
+      class_id: attendance.class_id || '',
+      attendance_date: attendance.attendance_date || new Date().toISOString().split('T')[0],
+      status: attendance.status || 'Present'
+    });
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      onSubmit(formData);
+    };
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    return (
+      <div className="prompt-overlay">
+        <div className="prompt-modal">
+          <div className="prompt-header">
+            <h3>Edit Attendance</h3>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="prompt-field">
+              <label>Student ID*</label>
+              <input
+                type="number"
+                name="student_id"
+                value={formData.student_id}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Class ID*</label>
+              <input
+                type="number"
+                name="class_id"
+                value={formData.class_id}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Attendance Date*</label>
+              <input
+                type="date"
+                name="attendance_date"
+                value={formData.attendance_date}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="prompt-field">
+              <label>Status*</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
+              >
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+                <option value="Excused">Excused</option>
+              </select>
+            </div>
+            <div className="prompt-actions">
+              <button type="submit" className="save-btn">Save Changes</button>
+              <button type="button" onClick={onClose} className="cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   // Update the renderContent function
   const renderContent = () => {
     if (showDashboard) {
@@ -2050,7 +3008,7 @@ const App = () => {
             <header>-
               <h1>{activeTable.charAt(0).toUpperCase() + activeTable.slice(1)} Table</h1>
               <button className="refresh" onClick={handleRefresh}>
-                {isLoading ? 'Loading...' : '↻ Refresh Data'}
+                {isLoading ? 'Loading...' : '↻ Fetch Data'}
               </button>
             </header>
             <div className="actions">
@@ -2084,6 +3042,65 @@ const App = () => {
         />
       )}
       {showAddRecord && renderAddRecordForm()}
+      {showEditForm && editingRecord && (
+        <>
+          {activeTable === 'students' && (
+            <EditStudentForm
+              student={editingRecord}
+              onSubmit={handleEditSubmit}
+              onClose={handleEditClose}
+            />
+          )}
+          {activeTable === 'teachers' && (
+            <EditTeacherForm
+              teacher={editingRecord}
+              onSubmit={handleEditSubmit}
+              onClose={handleEditClose}
+            />
+          )}
+          {activeTable === 'classes' && (
+            <EditClassForm
+              class_item={editingRecord}
+              onSubmit={handleEditSubmit}
+              onClose={handleEditClose}
+            />
+          )}
+          {activeTable === 'departments' && (
+            <EditDepartmentForm
+              department={editingRecord}
+              onSubmit={handleEditSubmit}
+              onClose={() => {
+                setShowEditForm(false);
+                setEditingRecord(null);
+              }}
+            />
+          )}
+          {activeTable === 'courses' && (
+            <EditCourseForm
+              course={editingRecord}
+              onSubmit={handleEditSubmit}
+              onClose={() => {
+                setShowEditForm(false);
+                setEditingRecord(null);
+              }}
+            />
+          )}
+          {activeTable === 'grades' && (
+            <EditGradeForm
+              grade={editingRecord}
+              onSubmit={handleEditSubmit}
+              onClose={handleEditClose}
+            />
+          )}
+          {activeTable === 'attendance' && (
+            <EditAttendanceForm
+              attendance={editingRecord}
+              onSubmit={handleEditSubmit}
+              onClose={handleEditClose}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };
