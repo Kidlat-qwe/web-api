@@ -11,11 +11,10 @@ app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
-  user: 'school_management_db_ke56_user',
-  password: 'rmdKDpgwnDlztwqPla4tCKZ5BTsvFUio',
-  host: 'dpg-cuslodvnoe9s7390fci0-a',
-  database: 'school_management_db_ke56',
-  port: 5432
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false // Required for Render's PostgreSQL
+  }
 });
 
 // Log all requests
@@ -1493,23 +1492,35 @@ app.patch('/courses/:id', async (req, res) => {
   }
 });
 
+// Add a test connection function
+const testDatabaseConnection = async () => {
+  try {
+    const client = await pool.connect();
+    console.log('Successfully connected to the database');
+    client.release();
+  } catch (err) {
+    console.error('Database connection error:', err);
+    throw err;
+  }
+};
+
+// Modify the server startup
+app.listen(port, async () => {
+  try {
+    await testDatabaseConnection();
+    console.log(`Server running on http://localhost:${port}`);
+    console.log('Available endpoints:');
+    console.log(`- GET  http://localhost:${port}/students`);
+    console.log(`- POST http://localhost:${port}/addStudent`);
+    console.log(`- GET  http://localhost:${port}/test`);
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something broke!' });
-});
-
-// Start server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-  console.log('Available endpoints:');
-  console.log(`- GET  http://localhost:${port}/students`);
-  console.log(`- POST http://localhost:${port}/addStudent`);
-  console.log(`- GET  http://localhost:${port}/test`);
-  console.log('Database config:', {
-    host: 'localhost',
-    port: 5432,
-    database: 'school_management',
-    user: 'postgres'
-  });
 }); 
