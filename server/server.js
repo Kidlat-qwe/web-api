@@ -4,18 +4,29 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 8000;
+const port = 8000;
 
 // Enable CORS for all origins during development
 app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // Required for Render's PostgreSQL
-  }
+    rejectUnauthorized: false, // Needed for cloud-based databases
+  },
 });
+
+pool.connect()
+  .then(() => console.log("✅ Connected to PostgreSQL!"))
+  .catch(err => console.error("❌ Database connection error:", err));
+
+module.exports = pool;
 
 // Log all requests
 app.use((req, res, next) => {
